@@ -3,9 +3,17 @@
 Resolução do 8-puzzle usando um Algoritmo Genético implementado **na munheca**
 (sem bibliotecas de GA). Trabalho de Inteligência Artificial.
 
-> Estado atual: **Fases 1–5 concluídas**. Domínio do puzzle, motor do AG,
-> experimentação batch e camada de visualização (Pygame + Streamlit) prontos.
+> Estado atual: **Fases 1–7 concluídas**. Domínio do puzzle, motor do AG,
+> experimentação batch (matriz estendida: 360 execuções) e camada de
+> visualização (Pygame + Streamlit) prontos. Relatório final em
+> [`RELATORIO.md`](RELATORIO.md).
 > O `roadmap-8puzzle-ag.md` é a fonte da verdade do projeto.
+
+## Relatório
+
+O relatório técnico do trabalho está em [`RELATORIO.md`](RELATORIO.md): ~12
+páginas em Markdown com fundamentação teórica, metodologia, 7 figuras
+geradas via matplotlib em `docs/figuras/` e comparação direta com A*.
 
 ## Requisitos
 
@@ -29,14 +37,23 @@ pip install -r requirements.txt
 Todos os comandos passam pelo `main.py`:
 
 ```bash
-# Rodar o batch completo de experimentos (salva em results/<timestamp>/)
+# Rodar o batch padrão (180 execuções, sem variar crossover)
 python main.py run
+
+# Rodar o batch estendido (360 execuções, com 2 crossovers)
+python -m experiment.run_all --matriz estendida
+
+# Rodar A* nos casos padrão (baseline ótimo)
+python -m experiment.run_astar
+
+# Regerar as 7 figuras do relatório
+python -m scripts.gerar_figuras_relatorio
 
 # Animar a melhor execução da pasta mais recente
 python main.py animate --latest
 
 # Animar uma execução específica
-python main.py animate results/2026-05-20_09-22-32/detalhes/facil-seltor-pm005-seed00.json
+python main.py animate results/2026-05-21_16-39-05/detalhes/facil-seltor-cxum-pm005-seed00.json
 
 # Ajustar a velocidade da animação (ms entre movimentos, default 300)
 python main.py animate --latest --delay 500
@@ -77,11 +94,14 @@ t2-ag-puzzle/
 │   ├── pygame_anim.py  # Animação Pygame
 │   └── dashboard.py    # Dashboard Streamlit
 ├── tools/              # Scripts auxiliares (geração de screenshots, etc.)
-├── tests/              # Testes unitários (93 testes verdes)
-├── docs/screenshots/   # Capturas para o relatório
+├── tests/              # Testes unitários (94 testes verdes)
+├── scripts/            # Geração de figuras do relatório
+├── docs/screenshots/   # Capturas do Pygame e do dashboard
+├── docs/figuras/       # 7 figuras matplotlib do RELATORIO.md
 ├── config.py           # GAConfig dataclass
 ├── fitness.py          # Bridge puzzle ↔ AG
 ├── main.py             # CLI principal
+├── RELATORIO.md        # Relatório técnico do trabalho
 ├── conftest.py
 ├── pytest.ini
 └── requirements.txt
@@ -127,7 +147,7 @@ gráficos respondem ao filtro.
 python main.py test
 ```
 
-93 testes cobrindo: puzzle (movimentos, validade, solvabilidade,
+94 testes cobrindo: puzzle (movimentos, validade, solvabilidade,
 heurísticas), GA (operadores, engine, elitismo), fitness composto,
 experimentos (runner, batch, métricas, persistência) e viz IO
 (parsing, descoberta de pastas, seleção do melhor run).

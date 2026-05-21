@@ -79,6 +79,7 @@ class BatchRunner:
             key=lambda r: (
                 r.caso_nome,
                 r.config.tipo_selecao.value,
+                r.config.tipo_crossover.value,
                 r.config.taxa_mutacao,
                 r.seed,
             )

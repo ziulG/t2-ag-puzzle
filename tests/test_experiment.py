@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytest
 
-from config import GAConfig, TipoSelecao
+from config import GAConfig, TipoCrossover, TipoSelecao
 from puzzle.goal import GOAL
 from puzzle.heuristicas import eh_soluvel
 
@@ -99,10 +99,18 @@ def test_casos_padrao_profundidades_anunciadas() -> None:
 
 def test_gerar_run_id_padrao() -> None:
     cfg = GAConfig(tipo_selecao=TipoSelecao.TORNEIO, taxa_mutacao=0.05)
-    assert gerar_run_id("medio", cfg, seed=3) == "medio-seltor-pm005-seed03"
+    assert gerar_run_id("medio", cfg, seed=3) == "medio-seltor-cxum-pm005-seed03"
 
     cfg2 = GAConfig(tipo_selecao=TipoSelecao.ROLETA, taxa_mutacao=0.10)
-    assert gerar_run_id("facil", cfg2, seed=0) == "facil-selrol-pm010-seed00"
+    assert gerar_run_id("facil", cfg2, seed=0) == "facil-selrol-cxum-pm010-seed00"
+
+
+def test_gerar_run_id_distingue_crossover() -> None:
+    """Mesma (sel, pm, seed) com crossovers diferentes ⇒ run_ids distintos."""
+    cfg_um = GAConfig(tipo_crossover=TipoCrossover.UM_PONTO, taxa_mutacao=0.05)
+    cfg_uni = GAConfig(tipo_crossover=TipoCrossover.UNIFORME, taxa_mutacao=0.05)
+    assert gerar_run_id("medio", cfg_um, seed=0) == "medio-seltor-cxum-pm005-seed00"
+    assert gerar_run_id("medio", cfg_uni, seed=0) == "medio-seltor-cxuni-pm005-seed00"
 
 
 def test_runner_retorna_runresult_com_campos_obrigatorios() -> None:
@@ -249,10 +257,11 @@ def test_metricas_agregacao_basica() -> None:
     runs = [Runner(cfg, CASOS_PADRAO[0], seed=s).run() for s in range(3)]
 
     resumo = agregar_por_config(runs)
-    chave = f"facil|torneio|pm={cfg.taxa_mutacao}"
+    chave = f"facil|torneio|um_ponto|pm={cfg.taxa_mutacao}"
     assert chave in resumo
     stats = resumo[chave]
     assert stats["n_execucoes"] == 3
+    assert stats["tipo_crossover"] == "um_ponto"
     assert 0.0 <= stats["taxa_sucesso"] <= 1.0
     assert stats["geracoes_media"] is not None
 

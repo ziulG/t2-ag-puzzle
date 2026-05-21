@@ -4,24 +4,28 @@ Matriz padrão (180 execuções):
 
 - **Casos**: ``CASOS_PADRAO`` (fácil, médio, difícil).
 - **Seleções**: TORNEIO e ROLETA.
+- **Crossover**: UM_PONTO (apenas).
 - **Taxas de mutação**: 0.01, 0.05, 0.10.
 - **Seeds**: 0..9 (10 execuções por combinação).
+
+Matriz estendida (360 execuções): inclui também CROSSOVER UNIFORME.
 
 Demais parâmetros vêm dos defaults de :class:`GAConfig` (pop=200, cromo=80,
 max_geracoes=1000, etc.).
 
 Uso::
 
-    python -m experiment.run_all                # paralelo (cpu_count workers)
-    python -m experiment.run_all --sequencial   # debug
-    python -m experiment.run_all --seeds 3      # subset rápido (3 seeds)
+    python -m experiment.run_all                       # matriz padrão (180)
+    python -m experiment.run_all --matriz estendida    # 360 execuções
+    python -m experiment.run_all --sequencial          # debug
+    python -m experiment.run_all --seeds 3             # subset rápido
 """
 
 import argparse
 import time
 from pathlib import Path
 
-from config import GAConfig, TipoSelecao
+from config import GAConfig, TipoCrossover, TipoSelecao
 
 from experiment.batch import BatchRunner
 from experiment.casos_teste import CASOS_PADRAO
@@ -40,10 +44,18 @@ from experiment.persistencia import (
 SELECOES = [TipoSelecao.TORNEIO, TipoSelecao.ROLETA]
 TAXAS_MUTACAO = [0.01, 0.05, 0.10]
 
+CROSSOVERS_PADRAO = [TipoCrossover.UM_PONTO]
+CROSSOVERS_ESTENDIDA = [TipoCrossover.UM_PONTO, TipoCrossover.UNIFORME]
+
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Batch da Fase 4: matriz de configurações × seeds × casos."
+    )
+    parser.add_argument(
+        "--matriz", choices=["padrao", "estendida"], default="padrao",
+        help="padrao: 180 execuções (só um-ponto). "
+             "estendida: 360 (um-ponto + uniforme).",
     )
     parser.add_argument(
         "--sequencial", action="store_true",
@@ -69,11 +81,12 @@ def _parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _construir_configs() -> list[GAConfig]:
-    """Produto cartesiano de SELECOES × TAXAS_MUTACAO sobre defaults do GAConfig."""
+def _construir_configs(crossovers: list[TipoCrossover]) -> list[GAConfig]:
+    """Produto cartesiano SELECOES × CROSSOVERS × TAXAS_MUTACAO sobre defaults."""
     return [
-        GAConfig(tipo_selecao=sel, taxa_mutacao=pm)
+        GAConfig(tipo_selecao=sel, tipo_crossover=cx, taxa_mutacao=pm)
         for sel in SELECOES
+        for cx in crossovers
         for pm in TAXAS_MUTACAO
     ]
 
@@ -113,7 +126,8 @@ def _imprimir_resumo(resumo: dict, sucesso_por_caso: dict) -> None:
 def main() -> int:
     args = _parse_args()
 
-    configs = _construir_configs()
+    crossovers = CROSSOVERS_ESTENDIDA if args.matriz == "estendida" else CROSSOVERS_PADRAO
+    configs = _construir_configs(crossovers)
     seeds = list(range(args.seeds))
     if args.casos:
         casos = [c for c in CASOS_PADRAO if c.nome in args.casos]

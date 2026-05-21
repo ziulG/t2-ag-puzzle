@@ -1,7 +1,7 @@
 """Agregação estatística dos resultados de batch.
 
-Agrupa execuções por ``(caso_nome, tipo_selecao, taxa_mutacao)`` e calcula
-métricas que alimentam o relatório:
+Agrupa execuções por ``(caso_nome, tipo_selecao, tipo_crossover, taxa_mutacao)``
+e calcula métricas que alimentam o relatório:
 
 - ``n_execucoes``
 - ``taxa_sucesso``        — fração de execuções que resolveram o puzzle
@@ -22,9 +22,14 @@ from typing import Any
 from experiment.runner import RunResult
 
 
-def chave_de_config(run: RunResult) -> tuple[str, str, float]:
-    """Chave de agrupamento: ``(caso_nome, tipo_selecao, taxa_mutacao)``."""
-    return (run.caso_nome, run.config.tipo_selecao.value, run.config.taxa_mutacao)
+def chave_de_config(run: RunResult) -> tuple[str, str, str, float]:
+    """Chave de agrupamento: ``(caso, selecao, crossover, taxa_mutacao)``."""
+    return (
+        run.caso_nome,
+        run.config.tipo_selecao.value,
+        run.config.tipo_crossover.value,
+        run.config.taxa_mutacao,
+    )
 
 
 def _media_seguro(valores: list[float]) -> float | None:
@@ -39,15 +44,16 @@ def agregar_por_config(runs: list[RunResult]) -> dict[str, dict[str, Any]]:
     """Agrega ``runs`` por chave de configuração.
 
     Retorna um dict ``{chave_str: estatisticas}`` em que ``chave_str`` é
-    ``"<caso>|<selecao>|pm=<taxa>"`` (legível e estável como chave de dict).
+    ``"<caso>|<selecao>|<crossover>|pm=<taxa>"`` — legível e único mesmo
+    quando o batch varia o crossover (matriz estendida).
     """
-    grupos: dict[tuple[str, str, float], list[RunResult]] = defaultdict(list)
+    grupos: dict[tuple[str, str, str, float], list[RunResult]] = defaultdict(list)
     for r in runs:
         grupos[chave_de_config(r)].append(r)
 
     resumo: dict[str, dict[str, Any]] = {}
-    for (caso, selecao, pm), itens in sorted(grupos.items()):
-        chave_str = f"{caso}|{selecao}|pm={pm}"
+    for (caso, selecao, crossover, pm), itens in sorted(grupos.items()):
+        chave_str = f"{caso}|{selecao}|{crossover}|pm={pm}"
         resolvidos = [r for r in itens if r.resolveu]
         geracoes = [r.geracoes_executadas for r in itens]
         tempos = [r.tempo_total_s for r in itens]
@@ -57,6 +63,7 @@ def agregar_por_config(runs: list[RunResult]) -> dict[str, dict[str, Any]]:
         resumo[chave_str] = {
             "caso": caso,
             "tipo_selecao": selecao,
+            "tipo_crossover": crossover,
             "taxa_mutacao": pm,
             "n_execucoes": len(itens),
             "n_resolveram": len(resolvidos),

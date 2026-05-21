@@ -119,12 +119,14 @@ class Runner:
 def gerar_run_id(caso_nome: str, config: GAConfig, seed: int) -> str:
     """ID legível e determinístico para uma execução.
 
-    Padrão: ``"{caso}-sel{tor|rol}-pm{NNN}-seed{NN}"`` — ex.:
-    ``"medio-seltor-pm005-seed03"``.
+    Padrão: ``"{caso}-sel{tor|rol}-cx{um|uni}-pm{NNN}-seed{NN}"`` — ex.:
+    ``"medio-seltor-cxum-pm005-seed03"``. O sufixo ``cx`` garante unicidade
+    quando a matriz varia também o crossover (matriz estendida).
     """
     sel = config.tipo_selecao.value[:3]
+    cx = "um" if config.tipo_crossover.value == "um_ponto" else "uni"
     pm = int(round(config.taxa_mutacao * 100))
-    return f"{caso_nome}-sel{sel}-pm{pm:03d}-seed{seed:02d}"
+    return f"{caso_nome}-sel{sel}-cx{cx}-pm{pm:03d}-seed{seed:02d}"
 
 
 def _filtrar_movimentos_validos(

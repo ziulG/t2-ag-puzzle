@@ -89,7 +89,10 @@ def _secao_visao_geral(runs: pd.DataFrame) -> None:
     c4.metric("Gerações médias", f"{runs['geracoes_executadas'].mean():.0f}")
 
     resumo = (
-        runs.groupby(["caso_nome", "tipo_selecao", "taxa_mutacao"], as_index=False)
+        runs.groupby(
+            ["caso_nome", "tipo_selecao", "tipo_crossover", "taxa_mutacao"],
+            as_index=False,
+        )
         .agg(
             n=("run_id", "count"),
             taxa_sucesso=("resolveu", "mean"),
@@ -97,7 +100,7 @@ def _secao_visao_geral(runs: pd.DataFrame) -> None:
             tempo_medio_s=("tempo_total_s", "mean"),
             manhattan_final_medio=("manhattan_final", "mean"),
         )
-        .sort_values(["caso_nome", "tipo_selecao", "taxa_mutacao"])
+        .sort_values(["caso_nome", "tipo_selecao", "tipo_crossover", "taxa_mutacao"])
     )
     st.dataframe(resumo, use_container_width=True)
 
@@ -147,11 +150,17 @@ def _secao_comparacao(runs: pd.DataFrame) -> None:
         return
 
     agg = (
-        runs.groupby(["tipo_selecao", "taxa_mutacao"], as_index=False)
+        runs.groupby(["tipo_selecao", "tipo_crossover", "taxa_mutacao"], as_index=False)
         .agg(taxa_sucesso=("resolveu", "mean"))
-        .sort_values(["tipo_selecao", "taxa_mutacao"])
+        .sort_values(["tipo_selecao", "tipo_crossover", "taxa_mutacao"])
     )
-    agg["config"] = agg["tipo_selecao"] + " | pm=" + agg["taxa_mutacao"].astype(str)
+    agg["config"] = (
+        agg["tipo_selecao"]
+        + " | "
+        + agg["tipo_crossover"]
+        + " | pm="
+        + agg["taxa_mutacao"].astype(str)
+    )
 
     fig, ax = plt.subplots(figsize=(10, 4))
     ax.bar(agg["config"], agg["taxa_sucesso"] * 100)

@@ -118,6 +118,10 @@ Cada movimento ocupa 2 bits: `CIMA=00`, `BAIXO=01`, `ESQUERDA=10`, `DIREITA=11` 
 
 A simulação aplica cada movimento no estado atual. Movimentos inválidos (tentar mover o vazio para fora do tabuleiro) **não alteram o estado**, mas são contabilizados na variável `movimentos_invalidos` para entrar como penalidade no fitness.
 
+![Cromossomo executando no Pygame](docs/screenshots/pygame_animacao.png)
+
+*Animação Pygame do melhor cromossomo executando sua sequência de 80 movimentos no tabuleiro — exatamente o que a fitness avalia quando decodifica os 160 bits.*
+
 ### 4.3 Função de fitness composta
 
 A fórmula adotada (`fitness.py:97`):
@@ -211,7 +215,11 @@ A figura de convergência (Figura 2) mostra o melhor fitness médio por geraçã
 
 ![Figura 2: Convergência por seleção — caso médio](docs/figuras/fig_02_convergencia.png)
 
-*Figura 2 — Convergência (melhor fitness médio ± IC 95% por bootstrap) para torneio e roleta no caso médio, primeiras 100 gerações. Os picos correspondem a execuções que resolveram naquela geração.*
+*Figura 2 — Esquerda: melhor fitness médio (capado em `max_score = 100`) ± IC 95% por bootstrap, para torneio e roleta no caso médio. O capamento suprime o ruído do `bonus_resolveu = 1000` e revela o regime Manhattan-only. Direita: percentual acumulado de runs que já resolveram por geração — a roleta ultrapassa o torneio a partir de ~gen 30 e termina à frente.*
+
+![Dashboard interativo: convergência](docs/screenshots/dashboard_02_convergencia.png)
+
+*Versão interativa da mesma análise no dashboard Streamlit (`python main.py dashboard`): filtros laterais permitem comparar configurações arbitrárias além da quebra torneio vs roleta.*
 
 A roleta dispara picos um pouco antes do torneio, sugerindo convergência mais rápida em média. Olhando os números do `resumo.json`:
 
@@ -255,6 +263,10 @@ Diferença marginal: uniforme tem +2 pp no caso médio (95% → 97%). No difíci
 ![Figura 5: Heatmap caso × mutação](docs/figuras/fig_05_heatmap_pm_caso.png)
 
 *Figura 5 — Taxa de sucesso (%) em função da dificuldade e da taxa de mutação. Verde = sucesso pleno; vermelho = falha sistemática.*
+
+![Dashboard interativo: heatmap caso × mutação](docs/screenshots/dashboard_04_heatmap.png)
+
+*Heatmap equivalente no dashboard Streamlit, com filtros globais permitindo recortes por caso, seleção ou crossover.*
 
 O heatmap deixa claro o regime do AG: **acima de 15 movimentos ótimos a probabilidade de sucesso colapsa**, independente da taxa de mutação.
 
@@ -387,6 +399,10 @@ $ python -m pytest tests/ -q -m "not slow"
 $ python -m pytest tests/ -q                # incluindo os 2 marcados como slow
 94 passed in 0.76s
 ```
+
+![Saída de `pytest -v` — 94 testes verdes](docs/screenshots/pytest_verde.png)
+
+*Captura do `pytest -v` executando os 94 testes (renderizada por `tools/gerar_screenshot_pytest.py`).*
 
 Cobertura por arquivo:
 

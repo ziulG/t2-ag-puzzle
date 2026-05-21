@@ -132,32 +132,66 @@ def figura_01_taxa_sucesso_por_caso(df: pd.DataFrame, destino: Path) -> Path:
 def figura_02_convergencia(
     df_runs: pd.DataFrame, df_hist: pd.DataFrame, destino: Path
 ) -> Path:
-    """Curvas de convergência: melhor fitness médio ± IC95% bootstrap.
+    """Convergência por seleção no caso médio em dois painéis.
 
-    Compara torneio vs roleta no caso médio, agregando todas as taxas de
-    mutação e crossovers (para olhar o efeito da seleção).
+    Esquerda: melhor fitness médio capado em ``max_score = 100``, suprimindo
+    o pico do ``bonus_resolveu`` para revelar o regime Manhattan.
+    Direita: percentual acumulado de runs que já resolveram por geração.
     """
-    ids_medio = set(df_runs[df_runs["caso_nome"] == "medio"]["run_id"])
+    MAX_SCORE = 100
+    FITNESS_OBJETIVO = 600  # max_score + bonus_resolveu/2 (defaults de config.py)
+    max_g = 100
+
+    runs_medio = df_runs[df_runs["caso_nome"] == "medio"]
+    ids_medio = set(runs_medio["run_id"])
     hist = df_hist[df_hist["run_id"].isin(ids_medio)].merge(
         df_runs[["run_id", "tipo_selecao"]], on="run_id"
     )
+    hist["fitness_capado"] = hist["melhor_fitness"].clip(upper=MAX_SCORE)
 
-    fig, ax = plt.subplots(figsize=(8, 4.5))
+    resolvidas = (
+        hist[hist["melhor_fitness"] >= FITNESS_OBJETIVO]
+        .groupby("run_id")["geracao"]
+        .min()
+        .rename("geracao_resolveu")
+    )
+    runs_meta = runs_medio[["run_id", "tipo_selecao"]].merge(
+        resolvidas, on="run_id", how="left"
+    )
+
+    fig, (ax_e, ax_d) = plt.subplots(1, 2, figsize=(11, 4.5))
     cores = {"torneio": COR_AZUL, "roleta": COR_VERMELHO}
-    max_g = 100                          # zoom nas primeiras 100 gerações
+    geracoes = np.arange(max_g + 1)
 
     for selecao, cor in cores.items():
         sub = hist[hist["tipo_selecao"] == selecao]
-        agreg = sub.groupby("geracao")["melhor_fitness"].agg(["mean", "std", "count"])
+        agreg = sub.groupby("geracao")["fitness_capado"].agg(["mean", "std", "count"])
         agreg = agreg[agreg.index <= max_g]
         ic = 1.96 * agreg["std"] / np.sqrt(agreg["count"].clip(lower=1))
-        ax.plot(agreg.index, agreg["mean"], color=cor, label=f"{selecao}", linewidth=1.8)
-        ax.fill_between(agreg.index, agreg["mean"] - ic, agreg["mean"] + ic, color=cor, alpha=0.15)
+        ax_e.plot(agreg.index, agreg["mean"], color=cor, label=selecao, linewidth=1.8)
+        ax_e.fill_between(
+            agreg.index, agreg["mean"] - ic, agreg["mean"] + ic, color=cor, alpha=0.15
+        )
 
-    ax.set_xlabel("Geração")
-    ax.set_ylabel("Melhor fitness (média ± IC95%)")
-    ax.set_title("Convergência por seleção — caso médio")
-    ax.legend(loc="lower right")
+        runs_sel = runs_meta[runs_meta["tipo_selecao"] == selecao]
+        n_total = len(runs_sel)
+        if n_total == 0:
+            continue
+        gerac_res = runs_sel["geracao_resolveu"].dropna().values
+        acumulado = np.array([(gerac_res <= g).sum() / n_total * 100 for g in geracoes])
+        ax_d.plot(geracoes, acumulado, color=cor, label=selecao, linewidth=1.8)
+
+    ax_e.set_xlabel("Geração")
+    ax_e.set_ylabel(f"Melhor fitness (capado em {MAX_SCORE})")
+    ax_e.set_title("Convergência pré-bônus — caso médio")
+    ax_e.set_ylim(0, MAX_SCORE + 5)
+    ax_e.legend(loc="lower right")
+
+    ax_d.set_xlabel("Geração")
+    ax_d.set_ylabel("Runs resolvidas (% acumulado)")
+    ax_d.set_title("Taxa de resolução acumulada — caso médio")
+    ax_d.set_ylim(0, 105)
+    ax_d.legend(loc="lower right")
 
     arquivo = destino / "fig_02_convergencia.png"
     fig.savefig(arquivo)

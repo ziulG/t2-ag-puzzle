@@ -21,7 +21,7 @@ def torneio(
     ``rng.sample`` (sem reposição) e devolve o de maior fitness. Sem reposição:
     evita o mesmo indivíduo competir contra si próprio e garante que, quando
     ``k >= |população|``, todos competem (comportamento exigido pelo teste
-    estatístico do roadmap).
+    estatístico).
     """
     k = min(tamanho_torneio, len(avaliados))
     competidores = rng.sample(avaliados, k)

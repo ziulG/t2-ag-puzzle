@@ -1,0 +1,33 @@
+% Preâmbulo LaTeX extra para o PDF do relatório (pandoc --include-in-header).
+% Compilado com xelatex. Usa só pacotes presentes no TeX Live "basic".
+
+% ---- Fontes ---------------------------------------------------------------
+% Menlo tem glifos de box-drawing (│ ├ └ ─) da árvore de diretórios e cobre
+% Greek/middot que aparecem dentro de blocos de código.
+\usepackage{fontspec}
+\setmonofont{Menlo}[Scale=0.82]
+
+% ---- Imagens --------------------------------------------------------------
+\usepackage{graphicx}
+\setkeys{Gin}{width=0.85\linewidth,keepaspectratio}
+
+% ---- Símbolos Unicode em texto corrido ------------------------------------
+% O pacote newunicodechar não existe no BasicTeX; tornamos os caracteres ativos
+% via kernel do XeTeX e os mapeamos para LaTeX robusto. Em blocos verbatim os
+% catcodes são reiniciados, então dentro de código os caracteres caem na fonte
+% mono (Menlo) — exatamente o desejado para a árvore de diretórios.
+\catcode`→=\active \protected\def→{\ensuremath{\rightarrow}}
+\catcode`↔=\active \protected\def↔{\ensuremath{\leftrightarrow}}
+\catcode`α=\active \protected\def α{\ensuremath{\alpha}}
+\catcode`β=\active \protected\def β{\ensuremath{\beta}}
+\catcode`≈=\active \protected\def≈{\ensuremath{\approx}}
+\catcode`≥=\active \protected\def≥{\ensuremath{\geq}}
+\catcode`∈=\active \protected\def∈{\ensuremath{\in}}
+\catcode`×=\active \protected\def×{\ensuremath{\times}}
+\catcode`⁰=\active \protected\def⁰{\textsuperscript{0}}
+\catcode`⁴=\active \protected\def⁴{\textsuperscript{4}}
+\catcode`⁵=\active \protected\def⁵{\textsuperscript{5}}
+\catcode`⁸=\active \protected\def⁸{\textsuperscript{8}}
+
+% ---- Espaçamento ----------------------------------------------------------
+\usepackage{parskip}

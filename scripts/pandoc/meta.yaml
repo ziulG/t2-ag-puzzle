@@ -1,0 +1,25 @@
+# Metadados do PDF do relatório (consumidos por pandoc via --metadata-file).
+# Mantidos fora do RELATORIO.md para não poluir a renderização no GitHub.
+#
+# OBS.: title/author/date abaixo são apenas FALLBACK. O script
+# gerar_pdf_relatorio.sh os deriva do cabeçalho do RELATORIO.md (linhas
+# "# título", "**Autor:**", "**Data:**") e sobrescreve estes valores. Para mudar
+# a capa, edite o cabeçalho do RELATORIO.md. O subtitle vive só aqui.
+title: "Resolução do 8-Puzzle com Algoritmo Genético"
+subtitle: "Trabalho Prático 2 — Inteligência Artificial (P2)"
+author: "Luiz G."
+date: "Maio de 2026"
+
+lang: pt-BR
+documentclass: article
+fontsize: 11pt
+classoption:
+  - titlepage
+geometry: "margin=2.5cm"
+toc-title: "Sumário"
+
+# Links coloridos discretos: TOC/refs internas em preto, URLs em azul.
+colorlinks: true
+linkcolor: black
+urlcolor: blue
+toccolor: black

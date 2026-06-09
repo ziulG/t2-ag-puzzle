@@ -57,6 +57,11 @@ case "${COMANDO}" in
     "${PY_BIN}" main.py test "$@"
     ;;
 
+  pdf|relatorio|report)
+    cor "→ Gerando RELATORIO.pdf (pandoc + xelatex)..."
+    bash scripts/gerar_pdf_relatorio.sh "$@"
+    ;;
+
   all)
     cor "→ Pipeline completo: test → run → animate"
     "${PY_BIN}" main.py test
@@ -73,12 +78,14 @@ Comandos:
   animate    Anima a melhor execução da pasta mais recente (Pygame)
   dashboard  Sobe o dashboard interativo Streamlit
   test       Roda a suíte de testes (pytest)
-  all         animate
-  help       Mostra esta ajudaPipeline: testes → run →
+  pdf         Gera RELATORIO.pdf a partir do RELATORIO.md (pandoc + xelatex)
+  all         Pipeline: testes → run → animate
+  help       Mostra esta ajuda
 
 Exemplos:
   ./run.sh run
   ./run.sh animate --delay 500
+  ./run.sh pdf
   ./run.sh all
 EOF
     ;;

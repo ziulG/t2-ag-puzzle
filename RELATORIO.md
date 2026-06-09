@@ -1,8 +1,8 @@
 # Resolução do 8-Puzzle com Algoritmo Genético
 
 **Disciplina:** Inteligência Artificial — P2
-**Autor:** Luiz G.
-**Data:** Maio/2026
+**Autor:** Luiz Gustavo Cutrim
+**Data:** Junho/2026
 **Repositório:** [t2-ag-puzzle](.)
 
 ---
@@ -23,9 +23,9 @@
 
 ## 1. Resumo
 
-Este trabalho implementa um Algoritmo Genético (AG) **na munheca**, sem nenhuma biblioteca especializada, para resolver o 8-puzzle. O cromossomo codifica uma sequência fixa de 80 movimentos em 160 bits e a função de fitness é composta — Manhattan do melhor estado intermediário menos penalidades por movimentos inválidos e por comprimento, mais um bônus grande quando o cromossomo de fato resolve. Foram implementados dois operadores de seleção (torneio e roleta), dois de crossover (um-ponto e uniforme), mutação por bit flip e elitismo.
+Este trabalho implementa um Algoritmo Genético (AG), sem nenhuma biblioteca especializada, para resolver o 8-puzzle. O cromossomo codifica uma sequência fixa de 80 movimentos em 160 bits e a função de fitness é composta por Manhattan do melhor estado intermediário menos penalidades por movimentos inválidos e por comprimento, mais um bônus grande quando o cromossomo de fato resolve. Foram implementados dois operadores de seleção (torneio e roleta), dois de crossover (um-ponto e uniforme), mutação por bit flip e elitismo.
 
-A bateria experimental cobriu **360 execuções** (12 configurações × 3 dificuldades × 10 *seeds*) sobre três casos canônicos (5, 15 e 25 movimentos do ótimo). Os resultados mostram **100% de sucesso no caso fácil**, **~96% no médio** e **apenas ~3% no difícil**. A comparação com A* + Manhattan deixa explícito o teto do AG: A* resolve o caso difícil em 16,5 ms com 25 movimentos exatos, enquanto o AG, mesmo quando resolve, gasta ~12 s e produz soluções com em média 54 movimentos (gap ≈ 29). A conclusão é que AG é um *trade-off* aceitável apenas onde A* não é aplicável — quando não há heurística admissível conhecida ou quando o espaço de estados não permite busca informada explícita.
+A bateria experimental cobriu **360 execuções** (12 configurações × 3 dificuldades × 10 *seeds*) sobre três casos canônicos (5, 15 e 25 movimentos do ótimo). Os resultados mostram **100% de sucesso no caso fácil**, **~96% no médio** e **apenas ~3% no difícil**. A comparação com A* + Manhattan deixa explícito o teto do AG: A* resolve o caso difícil em 16,5 ms com 25 movimentos exatos, enquanto o AG, mesmo quando resolve, gasta ~12 s e produz soluções com em média 54 movimentos (gap ≈ 29). A conclusão é que o AG só compensa onde A* não se aplica: sem heurística admissível conhecida, ou com espaço de estados grande demais para busca informada explícita.
 
 ---
 
@@ -37,7 +37,7 @@ O 8-puzzle é um tabuleiro 3×3 com peças numeradas de 1 a 8 e um espaço vazio
 
 ### 2.2 Motivação para usar AG
 
-Algoritmos Genéticos são meta-heurísticas evolutivas, inspiradas na seleção natural, que mantêm uma população de soluções candidatas e a refinam por seleção, recombinação e mutação. Diferente de A*, **um AG não exige uma heurística admissível** e não constrói o caminho explicitamente — ele atira combinações de movimentos no espaço de busca e refina o que sobrevive. Por isso é aplicado em domínios onde não há heurística admissível conhecida (ex.: otimização combinatória com restrições complexas).
+Algoritmos Genéticos são meta-heurísticas evolutivas, inspiradas na seleção natural, que mantêm uma população de soluções candidatas e a refinam por seleção, recombinação e mutação. Diferente de A*, **um AG não exige uma heurística admissível** e não constrói o caminho explicitamente, ele atira combinações de movimentos no espaço de busca e refina o que sobrevive. Por isso é aplicado em domínios onde não há heurística admissível conhecida (ex.: otimização combinatória com restrições complexas).
 
 Para o 8-puzzle, A* + Manhattan resolve qualquer instância em milissegundos: o AG aqui **não vai competir em qualidade**. O valor pedagógico está em vivenciar o ciclo evolutivo, calibrar parâmetros e medir honestamente quando o esforço evolutivo paga.
 
@@ -56,7 +56,7 @@ Para o 8-puzzle, A* + Manhattan resolve qualquer instância em milissegundos: o 
 
 ### 3.1 Representação do estado e solvabilidade
 
-O estado é uma `tuple[int, ...]` de 9 elementos com `0` como vazio. A escolha de **tupla imutável** (e não lista) garante hashabilidade — útil para detectar ciclos e cachear estados — e impede mutação acidental durante a simulação do cromossomo (`puzzle/estado.py:8`).
+O estado é uma `tuple[int, ...]` de 9 elementos com `0` como vazio. A escolha de **tupla imutável** (e não lista) garante hashabilidade — útil para detectar ciclos e cachear estados, e impede mutação acidental durante a simulação do cromossomo (`puzzle/estado.py:8`).
 
 **Solvabilidade** é uma propriedade crítica: só metade das permutações é solúvel. O critério na grade 3×3 é a paridade do número de inversões, ignorando o vazio (`puzzle/heuristicas.py:37`). Tentar rodar AG em um puzzle insolúvel garante laço infinito até o `max_geracoes`. Por isso a verificação é parte explícita do pipeline.
 
@@ -64,12 +64,12 @@ O estado é uma `tuple[int, ...]` de 9 elementos com `0` como vazio. A escolha d
 
 Duas heurísticas clássicas para o 8-puzzle:
 
-- **Hamming**: número de peças fora do lugar. Cota inferior fraca — uma peça "longe" do alvo conta igual a uma "perto".
+- **Hamming**: número de peças fora do lugar. Cota inferior fraca, uma peça "longe" do alvo conta igual a uma "perto".
 - **Manhattan**: soma das distâncias L1 de cada peça até sua casa-objetivo. Cota inferior mais apertada, ainda admissível.
 
-Manhattan é estritamente mais informada que Hamming. Por exemplo, no estado `(2,1,3,4,5,6,7,8,0)`, Hamming dá 2 (peças 1 e 2 fora) e Manhattan dá 2 também — mas em estados mais embaralhados Manhattan cresce muito mais rápido, guiando a busca com mais precisão. Adotamos **Manhattan** tanto na fitness do AG quanto no A*.
+Manhattan é estritamente mais informada que Hamming. Por exemplo, no estado `(2,1,3,4,5,6,7,8,0)`, Hamming dá 2 (peças 1 e 2 fora) e Manhattan dá 2 também, mas em estados mais embaralhados Manhattan cresce muito mais rápido, guiando a busca com mais precisão. Adotamos **Manhattan** tanto na fitness do AG quanto no A*.
 
-### 3.3 Algoritmos Genéticos — conceitos
+### 3.3 Algoritmos Genéticos, conceitos
 
 Um AG evolui uma população de cromossomos por gerações. Em cada geração:
 
@@ -86,7 +86,7 @@ A pressão seletiva precisa ser equilibrada: alta demais → convergência prema
 Há duas escolhas naturais de codificação:
 
 - **Por estado**: cromossomo = permutação `(p1,p2,…,p9)`. Crossover comum quebra a permutação e gera estados inválidos; exigiria operadores especializados (PMX, OX) e ainda assim o decode "estado → caminho até GOAL" é o próprio problema que estamos tentando resolver.
-- **Por movimentos**: cromossomo = sequência de direções. O decode é trivial — simular os movimentos —, qualquer crossover é fechado (combinação de bits é sempre bits), e o fitness pode olhar o melhor estado intermediário visitado.
+- **Por movimentos**: cromossomo = sequência de direções. O decode é trivial, simular os movimentos, qualquer crossover é fechado (combinação de bits é sempre bits), e o fitness pode olhar o melhor estado intermediário visitado.
 
 Adotamos a **codificação por movimentos**, com cada movimento em 2 bits (4 direções) e 80 movimentos por cromossomo, totalizando 160 bits. O comprimento 80 dá folga generosa em relação ao pior caso conhecido do 8-puzzle (31 movimentos do ótimo).
 
@@ -278,7 +278,7 @@ A diversidade revela o trade-off **exploração ↔ explotação**: `Pm=0,01` ma
 
 ### 5.6 AG vs A* — tempo e qualidade
 
-A comparação direta deixa explícito o teto do AG:
+Os números fecham a conta:
 
 ![Figura 6: AG vs A*](docs/figuras/fig_06_ag_vs_astar.png)
 
@@ -341,7 +341,7 @@ A escolha não é mística — está nos dados:
 
 O trabalho mostrou que é possível implementar um Algoritmo Genético funcional do zero em Python puro, com fitness composta e dois operadores de cada classe, e usá-lo para resolver o 8-puzzle até dificuldades moderadas (até 15 movimentos do ótimo) com taxa de sucesso > 95%. Acima disso, o AG colapsa: o caso difícil (25 movimentos do ótimo) tem apenas 3% de sucesso após 1.000 gerações de busca.
 
-A comparação direta com A* + Manhattan deixa o veredito explícito: **para o 8-puzzle, AG não é a ferramenta certa**. A* resolve qualquer instância em milissegundos com a solução ótima exata; o AG é centenas de vezes mais lento, sub-ótimo, e estocástico (pode não resolver). O valor do AG aqui é puramente didático — vivenciar o ciclo evolutivo, calibrar parâmetros, sentir a tensão entre exploração e explotação, e principalmente **medir honestamente quando o esforço evolutivo paga**.
+O confronto com A* + Manhattan não deixa dúvida: **para o 8-puzzle, AG não é a ferramenta certa**. A* resolve qualquer instância em milissegundos com a solução ótima exata; o AG é centenas de vezes mais lento, sub-ótimo, e estocástico (pode não resolver). O valor do AG aqui é puramente didático: sentir na prática a tensão entre exploração e explotação e, sobretudo, sair com o critério para **reconhecer quando a busca evolutiva não vale o preço**.
 
 Onde AG faria sentido: problemas combinatórios em que (a) não há heurística admissível conhecida, (b) o espaço de estados não cabe em memória para busca informada explícita, ou (c) o objetivo é multi-critério e pesos não são fixos. Para problemas onde A* + boa heurística é aplicável, A* é estritamente melhor.
 
@@ -422,7 +422,7 @@ Os 2 testes deselected (`-m "not slow"`) cobrem execuções longas (ex.: `test_r
 
 Recorte do `results/2026-05-21_16-39-05/resumo.json`, casos médio e difícil (taxa de mutação 0,05):
 
-| Configuração                          | n  | sucesso | gerações | tempo (s) | gap ótimo |
+| Configuração                           | n  | sucesso | gerações | tempo (s) | gap ótimo |
 |----------------------------------------|----|---------|----------|-----------|-----------|
 | medio   · torneio · 1-ponto · Pm=0,05  | 10 | 100%    | 32,8     | 1,42      | +27,8     |
 | medio   · torneio · uniforme · Pm=0,05 | 10 | 100%    | 20,4     | 0,95      | +23,4     |
